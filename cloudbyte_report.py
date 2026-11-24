@@ -1,8 +1,37 @@
 #!/usr/bin/env python3
 """CloudByte Ops Reporter: summarise CloudByte's activity from the command line."""
 
+def count_and_rank(records, get_key):
+    """Return (count, key) pairs for the records, ranked most-frequent first."""
+    counts = {}
+    for record in records:
+        key = get_key(record)
+        counts[key] = counts.get(key, 0) + 1
+    pairs = []
+    for key, count in counts.items():
+        pairs.append((count, key))
+    pairs.sort(key=by_count_then_name)
+    return pairs
+
+
+def by_count_then_name(pair):
+    """Sort key: busiest first, ties broken A-to-Z by name."""
+    count, name = pair          # "name" is whatever was ranked: a username or an hour
+    return (-count, name)       # busiest first (negated count), ties A->Z by name
+
+def get_user(record):
+    return record.split()[1]
+
+def get_hour(record):
+    return record.split()[0][11:13]
+
+def get_action(record):
+    return record.split()[2]
 
 def main():
+    # ... the log reading, header, and event lines stay unchanged ...
+
+# def main():
     # Read the access log into a list of records (one line per event).
     records = []
     with open("cloudbyte_access.log") as f:
@@ -22,12 +51,41 @@ def main():
 
     # One reformatted line per event.
     for record in records:
+        timestamp, username, action = record.split()
+        date = timestamp[:10]
+        time = timestamp[11:]
+        print(f"{date} {time}  {username} {action}")
+
+        """
         fields = record.split()
         date = fields[0][:10]
         time = fields[0][11:]
         print(f"{date} {time}  {fields[1]} {fields[2]}")
+        """
     print()
 
+    # Most active users.
+    user_pairs = count_and_rank(records, get_user)
+    print("Most active users")
+    for rank, (count, username) in enumerate(user_pairs, start=1):
+        print(f"  {rank}. {username}: {count} events")
+    print()
+
+    # Busiest hours.
+    hour_pairs = count_and_rank(records, get_hour)
+    print("Busiest hours")
+    for count, hour in hour_pairs:
+        print(f"  {hour}:00  {count} events")
+
+    print()
+
+    # Activity by type.
+    action_pairs = count_and_rank(records, get_action)
+    print("Activity by type")
+    for rank, (count, action) in enumerate(action_pairs, start=1):
+        print(f"  {rank}. {action}: {count} events")
+
+"""
     # Count how many events each user generated.
     user_counts = {}
     for record in records:
@@ -48,6 +106,7 @@ def main():
 
     for rank, (count, name) in enumerate(user_pairs, start=1):
         print(f"  {rank}. {name}: {count} events")
+"""
 
 if __name__ == "__main__":
     main()
