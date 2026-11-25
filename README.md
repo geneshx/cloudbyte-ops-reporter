@@ -9,6 +9,8 @@ with the event total and time span, then one tidy line per event.
 
 It now ranks three views, most active users, busiest hours, and activity by type, all through one shared function.
 
+Moreover it filters as well as ranks, with a login-activity view and a per-user breakdown built from list comprehensions.
+
 ```
 python3 cloudbyte_report.py
 ```

@@ -7,12 +7,18 @@ def count_and_rank(records, get_key):
     for record in records:
         key = get_key(record)
         counts[key] = counts.get(key, 0) + 1
+
+    pairs = [(count, key) for key, count in counts.items()]
+    pairs.sort(key=by_count_then_name)
+    return pairs
+
+"""
     pairs = []
     for key, count in counts.items():
         pairs.append((count, key))
     pairs.sort(key=by_count_then_name)
     return pairs
-
+"""
 
 def by_count_then_name(pair):
     """Sort key: busiest first, ties broken A-to-Z by name."""
@@ -33,10 +39,15 @@ def main():
 
 # def main():
     # Read the access log into a list of records (one line per event).
+    with open("cloudbyte_access.log") as f:
+        records = [line for line in f]
+
+    """
     records = []
     with open("cloudbyte_access.log") as f:
         for line in f:
             records.append(line)
+    """
 
     # Header: how many events, and the span from the first to the last.
     total = len(records)
@@ -83,6 +94,25 @@ def main():
     action_pairs = count_and_rank(records, get_action)
     print("Activity by type")
     for rank, (count, action) in enumerate(action_pairs, start=1):
+        print(f"  {rank}. {action}: {count} events")
+
+    print()
+
+    # Most active logins (login events only).
+    logins = [r for r in records if get_action(r) == "login"]
+    login_pairs = count_and_rank(logins, get_user)
+    print("Most active logins")
+    for rank, (count, username) in enumerate(login_pairs, start=1):
+        print(f"  {rank}. {username}: {count} events")
+
+    print()
+
+    # Activity for one user (that person's events only).
+    person = "alice"
+    person_events = [r for r in records if get_user(r) == person]
+    person_pairs = count_and_rank(person_events, get_action)
+    print(f"Activity for {person}")
+    for rank, (count, action) in enumerate(person_pairs, start=1):
         print(f"  {rank}. {action}: {count} events")
 
 """
