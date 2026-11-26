@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """CloudByte Ops Reporter: summarise CloudByte's activity from the command line."""
 
+import csv
+
 def count_and_rank(records, get_key):
     """Return (count, key) pairs for the records, ranked most-frequent first."""
     counts = {}
@@ -11,6 +13,16 @@ def count_and_rank(records, get_key):
     pairs = [(count, key) for key, count in counts.items()]
     pairs.sort(key=by_count_then_name)
     return pairs
+
+def total_and_rank(pairs, group_of):
+    """Return (total, group) pairs, the counts totalled by group and ranked."""
+    totals = {}
+    for count, name in pairs:
+        group = group_of[name]
+        totals[group] = totals.get(group, 0) + count
+    ranked = [(total, group) for group, total in totals.items()]
+    ranked.sort(key=by_count_then_name)
+    return ranked
 
 """
     pairs = []
@@ -41,6 +53,10 @@ def main():
     # Read the access log into a list of records (one line per event).
     with open("cloudbyte_access.log") as f:
         records = [line for line in f]
+
+    # Read the staff roster into a {username: department} lookup.
+    with open("users.csv") as f:
+        dept_of = {row["username"]: row["department"] for row in csv.DictReader(f)}
 
     """
     records = []
@@ -114,6 +130,14 @@ def main():
     print(f"Activity for {person}")
     for rank, (count, action) in enumerate(person_pairs, start=1):
         print(f"  {rank}. {action}: {count} events")
+
+    print()
+
+    # Activity by department (join the ranked user counts to the roster).
+    dept_pairs = total_and_rank(user_pairs, dept_of)
+    print("Activity by department")
+    for rank, (count, department) in enumerate(dept_pairs, start=1):
+        print(f"  {rank}. {department}: {count} events")
 
 """
     # Count how many events each user generated.
